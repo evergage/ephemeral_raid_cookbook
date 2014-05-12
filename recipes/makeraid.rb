@@ -33,10 +33,13 @@ ephemeral_devices = EphemeralDevices::Helper.get_ephemeral_devices(node.cloud.pr
 # We call the mdadm resource provider.
 mdadm "#{node[:ephemeral][:raid][:device]}" do
   devices ephemeral_devices
-  level 0
-  # "#{node[:ephemeral][:raid][:level]}"
   chunk node[:ephemeral][:raid][:chunk_size] if node[:ephemeral][:raid][:chunk_size]
-  bitmap node[:ephemeral][:raid][:bitmap] if node[:ephemeral][:raid][:bitmap]
+  if node[:ephemeral][:raid][:level] = 0
+    level 0
+  else
+    level node[:ephemeral][:raid][:level]
+    bitmap node[:ephemeral][:raid][:bitmap] 
+  end
   #spares node[:ephemeral][:raid][:spares] # not currently supported by the provider. Wai Opscode Wai ?
   action :create
   notifies :run, "execute[set_readahead_on_device_after_creation]", :immediately

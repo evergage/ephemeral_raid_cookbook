@@ -31,7 +31,7 @@
 ephemeral_devices = EphemeralDevices::Helper.get_ephemeral_devices(node.cloud.provider, node)
 
 
-if node[:ephemeral][:raid][:level] = 0
+if node[:ephemeral][:raid][:level] == 0
   # We call the mdadm resource provider without a bitmap or spares entry.
   mdadm "#{node[:ephemeral][:raid][:device]}" do
     devices ephemeral_devices

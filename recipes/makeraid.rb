@@ -33,7 +33,8 @@ ephemeral_devices = EphemeralDevices::Helper.get_ephemeral_devices(node.cloud.pr
 # We call the mdadm resource provider.
 mdadm "#{node[:ephemeral][:raid][:device]}" do
   devices ephemeral_devices
-  level "#{node[:ephemeral][:raid][:level]}"
+  level 0
+  # "#{node[:ephemeral][:raid][:level]}"
   chunk node[:ephemeral][:raid][:chunk_size] if node[:ephemeral][:raid][:chunk_size]
   bitmap node[:ephemeral][:raid][:bitmap] if node[:ephemeral][:raid][:bitmap]
   #spares node[:ephemeral][:raid][:spares] # not currently supported by the provider. Wai Opscode Wai ?

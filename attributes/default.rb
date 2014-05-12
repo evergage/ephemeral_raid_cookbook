@@ -6,6 +6,6 @@ default[:ephemeral][:raid][:chunk_size] = 256
 default[:ephemeral][:raid][:read_ahead] = 512
 default[:ephemeral][:raid][:device] = "/dev/md0"
 # We default to an internal bitmap, but you could force a path to a bitmap at the override attribute level.
-if node[:ephemeral][:raid][:level] > 0
+if node[:ephemeral][:raid][:level] != 0
   default[:ephemeral][:raid][:bitmap] = "internal"
 end

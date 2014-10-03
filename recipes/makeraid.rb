@@ -21,7 +21,7 @@
 #
 # This recipe based directly on that by Mike Heffner of Librato:
 # https://github.com/librato/basenode-chef-kitchen/blob/master/cookbooks/ephemeral/recipes/raid_ephemeral.rb
-# 
+#
 # Which was in turn modeled after the following :
 # https://github.com/riptano/CassandraClusterAMI/blob/master/.startcassandra.py
 #
@@ -31,7 +31,7 @@
 ephemeral_devices = EphemeralDevices::Helper.get_ephemeral_devices(node.cloud.provider, node)
 
 
-if ( node[:ephemeral][:raid][:level] == "0" )
+if ( node[:ephemeral][:raid][:level].to_s == "0" )
   # We call the mdadm resource provider without a bitmap or spares entry.
   mdadm "#{node[:ephemeral][:raid][:device]}" do
     devices ephemeral_devices
@@ -62,4 +62,3 @@ execute "set_readahead_on_device_after_creation" do
   only_if "which blockdev"
   only_if "test -b #{node[:ephemeral][:raid][:device]}"
 end
-

@@ -2,7 +2,10 @@
 
 This file is used to list changes made in each version of ephemeral_raid.
 
-## 0.1.0:
+## 0.0.8:
+* Fix to raid0 check thanks to ajorgensen
+
+## 0.0.7:
 
 * Initial release of ephemeral_raid
 

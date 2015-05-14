@@ -2,6 +2,9 @@
 
 This file is used to list changes made in each version of ephemeral_raid.
 
+## 0.0.9:
+* Fix to single device handling thanks to Klaas Jan Wierenga (kjwierenga)
+
 ## 0.0.8:
 * Fix to raid0 check thanks to ajorgensen
 

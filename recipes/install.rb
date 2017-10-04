@@ -30,25 +30,28 @@ else
   ephemeral_devices = EphemeralDevices::Helper.get_ephemeral_devices(node.cloud.provider, node)
 
   if ephemeral_devices.empty?
-   
-    # No devices found 
+
+    # No devices found
 
     log "Ephemeral devices not found"
 
-  elsif ( ephemeral_devices.length >= 2 ) || ( ephemeral_devices.length == 1 && node[:ephemeral][:raid][:force] == true )
+  else
+    log "Ephemeral devices found: #{ephemeral_devices}"
 
-    # We have more than one, or we have one and we are forcing it.
+    if ( ephemeral_devices.length >= 2 ) || ( ephemeral_devices.length == 1 && node[:ephemeral][:raid][:force] == true )
 
-    log "Ephemeral devices have been found"
+      # We have more than one, or we have one and we are forcing it.
 
-    package "mdadm"
+      package "mdadm"
 
-    include_recipe "ephemeral_raid::cleanup" do
-      only_if "which umount && which parted && which dd && which mdadm && which blockdev"
-    end
+      include_recipe "ephemeral_raid::cleanup" do
+        only_if "which umount && which parted && which dd && which mdadm && which blockdev"
+      end
 
-    include_recipe "ephemeral_raid::makeraid" do
-      only_if "which mdadm && which blockdev"
+      include_recipe "ephemeral_raid::makeraid" do
+        only_if "which mdadm && which blockdev"
+      end
+
     end
 
   end

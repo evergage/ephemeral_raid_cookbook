@@ -2,6 +2,9 @@
 
 This file is used to list changes made in each version of ephemeral_raid.
 
+## 0.0.10:
+* Support for GCE local SSDs thanks to Ian Springer (ispringer)
+
 ## 0.0.9:
 * Fix to single device handling thanks to Klaas Jan Wierenga (kjwierenga)
 

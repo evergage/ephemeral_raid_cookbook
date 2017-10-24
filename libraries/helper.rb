@@ -15,7 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 # Notes:
 #
 # This helper started life as work by RightScale, also under Apache 2.0 License
@@ -64,12 +64,27 @@ module EphemeralDevices
         case cloud
         when 'gce'
           # According to the GCE documentation, the instances have links for ephemeral disks as
-          # /dev/disk/by-id/google-ephemeral-disk-*. Refer to
-          # https://developers.google.com/compute/docs/disks#scratchdisks for more information.
+          # /dev/disk/by-id/google-ephemeral-disk-* and for local SSDs as /dev/disk/by-id/google-local-ssd-*.
+          # Refer to https://developers.google.com/compute/docs/disks for more information.
           #
-          ephemeral_devices = node[cloud]['attached_disks']['disks'].map do |device|
+          if node[cloud]['instance'] && node[cloud]['instance']['disks']
+            disks = node[cloud]['instance']['disks']
+          elsif node[cloud]['attached_disks'] && node[cloud]['attached_disks']['disks']
+            disks = node[cloud]['attached_disks']['disks']
+          else
+            disks = []
+          end
+          ephemeral_devices = disks.map do |device|
             if device['type'] == "EPHEMERAL" && device['deviceName'].match(/^ephemeral-disk-\d+$/)
-              "/dev/disk/by-id/google-#{device["deviceName"]}"
+              "/dev/disk/by-id/google-#{device['deviceName']}"
+            elsif device['type'] == "LOCAL-SSD" && device['deviceName'].match(/^local-ssd-\d+$/)
+              # As of 8/22/17, there is a GCE bug where the symlinks under /dev/disk/by-id/ are not created
+              # correctly for NVMe local SSD's. Work around by returning the actual NVMe block devices (/dev/nvme0n*).
+              # See https://googlecloudplatform.uservoice.com/forums/302595-compute-engine/suggestions/17739364--dev-disk-by-id-contains-only-one-nvme-device-sym.
+              scsiDevice = "/dev/disk/by-id/google-#{device['deviceName']}"
+              nvmeDeviceNumber = device['deviceName'].gsub(/^local-ssd-/, '').to_i + 1
+              nvmeDevice = "/dev/nvme0n#{nvmeDeviceNumber}"
+              File.exist?(nvmeDevice) ? nvmeDevice : scsiDevice
             end
           end
           # Removes nil elements from the ephemeral_devices array if any.

@@ -115,6 +115,7 @@ module EphemeralDevices
             fixed_device
           else
             Chef::Log.warn "could not find ephemeral device: #{device}"
+            nil
           end
         end
       end

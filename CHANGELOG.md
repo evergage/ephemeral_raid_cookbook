@@ -2,9 +2,11 @@
 
 This file is used to list changes made in each version of ephemeral_raid.
 
+## 0.0.12
+* add support for discovering NVMe SSD devices on AWS EC2 thanks to Ian Springer (ispringer)
+
 ## 0.0.11:
-* Fix raid creation error occuring when AMI's device mapping contains more devices than actually available for the given instance type.
-See https://github.com/atrull/ephemeral_raid_cookbook/issues/3 for details
+* Fix raid creation error occuring when AMI's device mapping contains more devices than actually available for the given instance type. See https://github.com/atrull/ephemeral_raid_cookbook/issues/3 for details (gerilya)
 
 ## 0.0.10:
 * Support for GCE local SSDs thanks to Ian Springer (ispringer)
@@ -13,7 +15,7 @@ See https://github.com/atrull/ephemeral_raid_cookbook/issues/3 for details
 * Fix to single device handling thanks to Klaas Jan Wierenga (kjwierenga)
 
 ## 0.0.8:
-* Fix to raid0 check thanks to ajorgensen
+* Fix to raid0 check thanks to (ajorgensen)
 
 ## 0.0.7:
 

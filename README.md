@@ -99,12 +99,13 @@ While we recommend you retain most of the default behaviour, your needs may diff
 Development
 ===========
 
-See the [Github page][https://github.com/mdsol/ephemeral_raid_cookbook]
+See the [Github page][https://github.com/atrull/ephemeral_raid_cookbook]
 
 Authors
 =======
 
 * Author: Alex Trull <atrull@mdsol.com> with plenty of ideas bouncing around with Benton Roberts <broberts@mdsol.com>
+* Significant patches from gerilya and ispringer.
 
 Special Thanks
 ==============

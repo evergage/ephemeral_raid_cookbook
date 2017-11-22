@@ -24,75 +24,61 @@
 
 module EphemeralDevices
   module Helper
-    # Identifies the ephemeral devices available on a cloud server based on cloud-specific Ohai data and returns
-    # them as an array. This method also does the mapping required for Xen hypervisors (/dev/sdX -> /dev/xvdX).
+    # Identifies the ephemeral devices available on a cloud server and returns them as an array. This method also does
+    # the mapping required for Xen hypervisors (/dev/sdX -> /dev/xvdX).
     #
     # @param cloud [String] the name of cloud
     # @param node [Chef::Node] the Chef node
     #
-    # @return [Array<String>] list of ephemeral available ephemeral devices.
+    # @return [Array<String>] list of available ephemeral devices.
     #
     def self.get_ephemeral_devices(cloud, node)
-      ephemeral_devices = []
-      # Detects the ephemeral devices available on the instance.
-      #
-      # If the cloud plugin supports block device mapping on the node, obtain the
-      # information from the node for setting up block device
-      #
-      if node[cloud].keys.any? { |key| key.match(/^block_device_mapping_ephemeral\d+$/) }
-        ephemeral_devices = node[cloud].map do |key, device|
-          if key.match(/^block_device_mapping_ephemeral\d+$/)
-            device.match(/\/dev\//) ? device : "/dev/#{device}"
+      if cloud == 'gce'
+        # According to the GCE documentation, the instances have links for ephemeral disks as
+        # /dev/disk/by-id/google-ephemeral-disk-* and for local SSDs as /dev/disk/by-id/google-local-ssd-*.
+        # Refer to https://developers.google.com/compute/docs/disks for more information.
+        #
+        if node[cloud]['instance'] && node[cloud]['instance']['disks']
+          disks = node[cloud]['instance']['disks']
+        elsif node[cloud]['attached_disks'] && node[cloud]['attached_disks']['disks']
+          disks = node[cloud]['attached_disks']['disks']
+        else
+          disks = []
+        end
+        ephemeral_devices = disks.map do |device|
+          if device['type'] == "EPHEMERAL" && device['deviceName'].match(/^ephemeral-disk-\d+$/)
+            "/dev/disk/by-id/google-#{device['deviceName']}"
+          elsif device['type'] == "LOCAL-SSD" && device['deviceName'].match(/^local-ssd-\d+$/)
+            # As of 8/22/17, there is a GCE bug where the symlinks under /dev/disk/by-id/ are not created
+            # correctly for NVMe local SSD's. Work around by returning the actual NVMe block devices (/dev/nvme0n*).
+            # See https://googlecloudplatform.uservoice.com/forums/302595-compute-engine/suggestions/17739364--dev-disk-by-id-contains-only-one-nvme-device-sym.
+            scsiDevice = "/dev/disk/by-id/google-#{device['deviceName']}"
+            nvmeDeviceNumber = device['deviceName'].gsub(/^local-ssd-/, '').to_i + 1
+            nvmeDevice = "/dev/nvme0n#{nvmeDeviceNumber}"
+            File.exist?(nvmeDevice) ? nvmeDevice : scsiDevice
           end
         end
-
-        # Removes nil elements from the ephemeral_devices array if any.
-        ephemeral_devices.compact!
+      else
+        # If the cloud plugin supports ephemeral block device mappings, use them to obtain the device IDs.
+        ephemeral_devices = node[cloud].select { |key, value| key.match(/^block_device_mapping_ephemeral\d+$/) }.map { |key, value|
+          value.start_with?('/dev/') ? value : "/dev/#{value}"
+        }
 
         # Servers running on Xen hypervisor require the block device to be in /dev/xvdX instead of /dev/sdX
         if node.attribute?('virtualization') && node['virtualization']['system'] == "xen"
-          puts "Mapping for Ephemeral Devices: #{ephemeral_devices.inspect}"
           ephemeral_devices = EphemeralDevices::Helper.fix_device_mapping(
-            ephemeral_devices,
-            node['block_device'].keys
+              ephemeral_devices,
+              node['block_device'].keys
           )
-          Chef::Log.info "Ephemeral devices found for cloud '#{cloud}': #{ephemeral_devices.inspect}"
         end
-      else
-        # Cloud specific ephemeral detection logic if the cloud doesn't support block_device_mapping
-        #
-        case cloud
-        when 'gce'
-          # According to the GCE documentation, the instances have links for ephemeral disks as
-          # /dev/disk/by-id/google-ephemeral-disk-* and for local SSDs as /dev/disk/by-id/google-local-ssd-*.
-          # Refer to https://developers.google.com/compute/docs/disks for more information.
-          #
-          if node[cloud]['instance'] && node[cloud]['instance']['disks']
-            disks = node[cloud]['instance']['disks']
-          elsif node[cloud]['attached_disks'] && node[cloud]['attached_disks']['disks']
-            disks = node[cloud]['attached_disks']['disks']
-          else
-            disks = []
-          end
-          ephemeral_devices = disks.map do |device|
-            if device['type'] == "EPHEMERAL" && device['deviceName'].match(/^ephemeral-disk-\d+$/)
-              "/dev/disk/by-id/google-#{device['deviceName']}"
-            elsif device['type'] == "LOCAL-SSD" && device['deviceName'].match(/^local-ssd-\d+$/)
-              # As of 8/22/17, there is a GCE bug where the symlinks under /dev/disk/by-id/ are not created
-              # correctly for NVMe local SSD's. Work around by returning the actual NVMe block devices (/dev/nvme0n*).
-              # See https://googlecloudplatform.uservoice.com/forums/302595-compute-engine/suggestions/17739364--dev-disk-by-id-contains-only-one-nvme-device-sym.
-              scsiDevice = "/dev/disk/by-id/google-#{device['deviceName']}"
-              nvmeDeviceNumber = device['deviceName'].gsub(/^local-ssd-/, '').to_i + 1
-              nvmeDevice = "/dev/nvme0n#{nvmeDeviceNumber}"
-              File.exist?(nvmeDevice) ? nvmeDevice : scsiDevice
-            end
-          end
-          # Removes nil elements from the ephemeral_devices array if any.
-          ephemeral_devices.compact!
-        else
-          Chef::Log.info "Cloud '#{cloud}' is not supported by this cookbook."
-        end
+
+        # NVMe SSD devices aren't captured by ohai, so add them manually.
+        ephemeral_devices.concat Dir.glob('/dev/nvme*n*')
       end
+
+      puts "Ephemeral devices found for cloud '#{cloud}': #{ephemeral_devices.inspect}"
+      Chef::Log.info "Ephemeral devices found for cloud '#{cloud}': #{ephemeral_devices.inspect}"
+
       ephemeral_devices
     end
 

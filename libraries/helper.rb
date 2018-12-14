@@ -74,6 +74,9 @@ module EphemeralDevices
 
         # NVMe SSD devices aren't captured by ohai, so add them manually.
         ephemeral_devices.concat Dir.glob('/dev/nvme*n*')
+
+        # Avoid picking up the root EBS volume as an ephemeral drive.
+        ephemeral_devices.reject! { |x| x.start_with?('/dev/nvme0') } if File.symlink?('/dev/xvda')
       end
 
       puts "Ephemeral devices found for cloud '#{cloud}': #{ephemeral_devices.inspect}"

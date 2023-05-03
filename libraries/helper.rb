@@ -59,17 +59,23 @@ module EphemeralDevices
           end
         end
       else
-        # If the cloud plugin supports ephemeral block device mappings, use them to obtain the device IDs.
-        ephemeral_devices = node[cloud].select { |key, value| key.match(/^block_device_mapping_ephemeral\d+$/) }.map { |key, value|
-          value.start_with?('/dev/') ? value : "/dev/#{value}"
-        }
+        if node[cloud]
+          # If the cloud plugin supports ephemeral block device mappings, use them to obtain the device IDs.
+          ephemeral_devices = node[cloud].select { |key, value| key.match(/^block_device_mapping_ephemeral\d+$/) }.map { |key, value|
+            value.start_with?('/dev/') ? value : "/dev/#{value}"
+          }
 
-        # Servers running on Xen hypervisor require the block device to be in /dev/xvdX instead of /dev/sdX
-        if node.attribute?('virtualization') && node['virtualization']['system'] == "xen"
-          ephemeral_devices = EphemeralDevices::Helper.fix_device_mapping(
-              ephemeral_devices,
-              node['block_device'].keys
-          )
+          # Servers running on Xen hypervisor require the block device to be in /dev/xvdX instead of /dev/sdX
+          if node.attribute?('virtualization') && node['virtualization']['system'] == "xen"
+            ephemeral_devices = EphemeralDevices::Helper.fix_device_mapping(
+                ephemeral_devices,
+                node['block_device'].keys
+            )
+          end
+        else
+          puts "OHAI metadata not populated for cloud '#{cloud}'"
+          Chef::Log.warn "OHAI metadata not populated for cloud '#{cloud}'"
+          ephemeral_devices = []
         end
 
         # NVMe SSD devices aren't captured by ohai, so add them manually.

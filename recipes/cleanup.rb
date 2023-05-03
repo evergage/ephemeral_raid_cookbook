@@ -20,7 +20,7 @@
 
 # Obtain the available ephemeral devices. See "libraries/helper.rb" for the definition of
 # "get_ephemeral_devices" method.
-ephemeral_devices = EphemeralDevices::Helper.get_ephemeral_devices(node.cloud.provider, node)
+ephemeral_devices = EphemeralDevices::Helper.get_ephemeral_devices(node['cloud']['provider'], node)
 
 # Some cleanup of cloud defaults that would conflict with the results of this recipe
 mount "/mnt/ephemeral" do

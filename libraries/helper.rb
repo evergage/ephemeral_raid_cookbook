@@ -79,7 +79,9 @@ module EphemeralDevices
         end
 
         # NVMe ephemeral devices aren't captured by ohai, so add them manually.
-        ephemeral_devices.concat Dir.glob('/dev/nvme*n*').select { |device| ! system 'sudo', '/sbin/ebsnvme-id', device }
+        ephemeral_devices.concat Dir.glob('/dev/nvme*n*').select {
+          |device| ! system 'sudo', '/sbin/ebsnvme-id', device, [:out, :err] => File::NULL
+        }
       end
 
       puts "Ephemeral devices found for cloud '#{cloud}': #{ephemeral_devices.inspect}"
